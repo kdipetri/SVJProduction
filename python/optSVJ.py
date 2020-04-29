@@ -17,6 +17,7 @@ options.register("mDark", 20.0, VarParsing.multiplicity.singleton, VarParsing.va
 options.register("rinv", 0.3, VarParsing.multiplicity.singleton, VarParsing.varType.float)
 options.register("alpha", "peak", VarParsing.multiplicity.singleton, VarParsing.varType.string)
 options.register("temperature", 2.0, VarParsing.multiplicity.singleton, VarParsing.varType.float)
+options.register("decay", "generic", VarParsing.multiplicity.singleton, VarParsing.varType.string)
 options.register("filterZ2", True, VarParsing.multiplicity.singleton, VarParsing.varType.bool)
 options.register("part", 1, VarParsing.multiplicity.singleton, VarParsing.varType.int)
 options.register("indir", "", VarParsing.multiplicity.singleton, VarParsing.varType.string)
@@ -53,7 +54,7 @@ if len(options.scan)>0:
 
 if options.suep:
     _helper = suepHelper()
-    _helper.setModel(options.mMediator,options.mDark,options.temperature)
+    _helper.setModel(options.mMediator,options.mDark,options.temperature,options.decay)
     options.filterZ2 = False
     options.channel = ""
 else:
