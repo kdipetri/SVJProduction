@@ -1,20 +1,20 @@
 from Condor.Production.jobSubmitter import *
-from SVJ.Production.svjHelper import svjHelper
+from SVJ.Production.suepHelper import suepHelper
 from glob import glob
 
-def makeNameSVJ(self,num):
+def makeNameSUEP(self,num):
     return self.name+"_part-"+str(num)
 
-protoJob.makeName = makeNameSVJ
+protoJob.makeName = makeNameSUEP
 
-class jobSubmitterSVJ(jobSubmitter):
+class jobSubmitterSUEP(jobSubmitter):
     def __init__(self):
-        super(jobSubmitterSVJ,self).__init__()
+        super(jobSubmitterSUEP,self).__init__()
         
-        self.helper = svjHelper()
+        self.helper = suepHelper()
 
     def addDefaultOptions(self,parser):
-        super(jobSubmitterSVJ,self).addDefaultOptions(parser)
+        super(jobSubmitterSUEP,self).addDefaultOptions(parser)
         parser.add_option("-y", "--getpy", dest="getpy", default=False, action="store_true", help="make python file list for ntuple production (default = %default)")
         parser.add_option("--actualEvents", dest="actualEvents", default=False, action="store_true", help="count actual number of events from each input file (for python file list) (default = %default)")
         self.modes.update({
@@ -22,7 +22,7 @@ class jobSubmitterSVJ(jobSubmitter):
         })
 
     def addExtraOptions(self,parser):
-        super(jobSubmitterSVJ,self).addExtraOptions(parser)
+        super(jobSubmitterSUEP,self).addExtraOptions(parser)
         
         parser.add_option("-d", "--dicts", dest="dicts", default="", help="file with list of input dicts; each dict contains signal parameters (required) (default = %default)")
         parser.add_option("-o", "--output", dest="output", default="", help="path to output directory in which root files will be stored (required) (default = %default)")
@@ -43,19 +43,19 @@ class jobSubmitterSVJ(jobSubmitter):
         parser.add_option("-v", "--verbose", dest="verbose", default=False, action="store_true", help="enable verbose output (default = %default)")
 
     def runPerJob(self,job):
-        super(jobSubmitterSVJ,self).runPerJob(job)
+        super(jobSubmitterSUEP,self).runPerJob(job)
         if self.getpy:
             self.doPy(job)
         
     def checkDefaultOptions(self,options,parser):
-        super(jobSubmitterSVJ,self).checkDefaultOptions(options,parser)
+        super(jobSubmitterSUEP,self).checkDefaultOptions(options,parser)
         if (options.actualEvents and not options.getpy):
             parser.error("Option --actualEvents only allowed for -y mode")
         if (options.actualEvents and options.skipParts!="auto"):
             parser.error("Option --actualEvents requires auto skipParts")
 
     def checkExtraOptions(self,options,parser):
-        super(jobSubmitterSVJ,self).checkExtraOptions(options,parser)
+        super(jobSubmitterSUEP,self).checkExtraOptions(options,parser)
     
         if options.dicts is None or len(options.dicts)==0:
             parser.error("Required option: --dicts [dict]")
@@ -80,7 +80,7 @@ class jobSubmitterSVJ(jobSubmitter):
             os.remove(self.getpy_weights)
             
     def generateExtra(self,job):
-        super(jobSubmitterSVJ,self).generateExtra(job)
+        super(jobSubmitterSUEP,self).generateExtra(job)
         job.patterns.update([
             ("JOBNAME",job.name+"_part-$(Process)_$(Cluster)"),
             ("EXTRAINPUTS","input/args_"+job.name+".txt"),
@@ -113,7 +113,7 @@ class jobSubmitterSVJ(jobSubmitter):
             # extra attribute to store actual events
             if self.actualEvents: job.actualEvents = 0
             # make name from params
-            self.helper.setModel(pdict["channel"],pdict["mMediator"],pdict["mDark"],pdict["rinv"],pdict["alpha"],boost=pdict["boost"] if "boost" in pdict else False,generate=not (self.madgraph or self.gridpack))
+            self.helper.setModel(pdict["mMediator"],pdict["mDark"],pdict["temperature"],pdict["decay"])        
             job.name = self.helper.getOutName(int(self.maxEvents),outpre=self.outpre)
             if self.verbose:
                 print "Creating job: "+job.name
@@ -128,23 +128,13 @@ class jobSubmitterSVJ(jobSubmitter):
             # write job options to file - will be transferred with job
             if self.prepare:
                 with open("input/args_"+job.name+".txt",'w') as argfile:
-                    if self.suep:
-                        arglist = [
-                            "suep=1",
-                            "mMediator="+str(pdict["mMediator"]),
-                            "mDark="+str(pdict["mDark"]),
-                            "temperature="+str(pdict["temperature"]),
-                            "decay="+str(pdict["decay"]),
-                        ]
-                    else:
-                        arglist = [
-                            "channel="+str(pdict["channel"]),
-                            "mMediator="+str(pdict["mMediator"]),
-                            "mDark="+str(pdict["mDark"]),
-                            "rinv="+str(pdict["rinv"]),
-                            "alpha="+str(pdict["alpha"]),
-                            "boost="+str(pdict["boost"] if "boost" in pdict else False),
-                        ]
+                    arglist = [
+                        "suep=1",
+                        "mMediator="+str(pdict["mMediator"]),
+                        "mDark="+str(pdict["mDark"]),
+                        "temperature="+str(pdict["temperature"]),
+                        "decay="+str(pdict["decay"]),
+                    ]
                     arglist.extend([
                         "maxEvents="+str(self.maxEvents),
                         "outpre="+self.outpre,
